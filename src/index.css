@@ -1,0 +1,77 @@
+@import "tailwindcss";
+:root {
+
+  /* Background */
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --soft-bg: #F1F5F9;
+
+  /* Sidebar */
+  --sidebar: #e4ebee;
+  --sidebar-hover: #F8FAFC;
+  --sidebar-active: #EEF4FF;
+/* main */
+  --main: #dededecc;
+/* white */
+--white-:#ebebeb;
+  /* Main Brand */
+  --primary: #2563EB;
+  --primary-hover: #0a54ffbf;
+
+  /* Secondary */
+  --secondary: #0F172A;
+  --secondary-2-:#222222
+  /* Status */
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --danger: #DC2626;
+  --purple: #9333EA;
+
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #ffffff;
+
+  /* Border */
+  --card-text-: #0a0b0b8e;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.04);
+  --shadow-md: 0 8px 20px rgba(0,0,0,.05);
+
+  /* Radius */
+  --radius: 14px;
+
+
+  .dark {
+
+  --background: #020617;
+  --surface: #0F172A;
+  --soft-bg: #1E293B;
+
+  --sidebar: #0F172A;
+  --sidebar-hover: #1E293B;
+  --sidebar-active: #172554;
+
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+
+  --secondary: #FFFFFF;
+
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --purple: #A855F7;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+
+  --border: #334155;
+}
+}
+
+*{
+text-transform: capitalize;
+}
+button{
+  cursor: pointer;
+}

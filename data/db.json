@@ -1,0 +1,202 @@
+{
+  "roomTypes": [
+    {
+      "id": "1",
+      "category": "Suite",
+      "name": "Ocean View Suite",
+      "description": "Luxury suite with stunning ocean view and private balcony",
+      "basePrice": 420,
+      "capacityAdults": 2,
+      "capacityChildren": 1
+    },
+    {
+      "id": "2",
+      "category": "Deluxe",
+      "name": "Premium Double Queen",
+      "description": "Spacious premium room with mountain view",
+      "basePrice": 290,
+      "capacityAdults": 4,
+      "capacityChildren": 0
+    },
+    {
+      "id": "3",
+      "category": "Standard",
+      "name": "Skyline King Room",
+      "description": "Modern room with beautiful city skyline view",
+      "basePrice": 350,
+      "capacityAdults": 2,
+      "capacityChildren": 1
+    }
+  ],
+  "roomTypeImages": [
+    {
+      "id": "1",
+      "roomTypeId": 1,
+      "imageUrl": "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=500&q=80",
+      "isPrimary": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "2",
+      "roomTypeId": 1,
+      "imageUrl": "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500&q=80",
+      "isPrimary": false,
+      "displayOrder": 2
+    },
+    {
+      "id": "3",
+      "roomTypeId": 2,
+      "imageUrl": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&q=80",
+      "isPrimary": true,
+      "displayOrder": 1
+    },
+    {
+      "id": "4",
+      "roomTypeId": 2,
+      "imageUrl": "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500&q=80",
+      "isPrimary": false,
+      "displayOrder": 2
+    },
+    {
+      "id": "5",
+      "roomTypeId": 3,
+      "imageUrl": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500&q=80",
+      "isPrimary": true,
+      "displayOrder": 1
+    }
+  ],
+  "amenities": [
+    {
+      "id": "1",
+      "name": "Ocean View",
+      "icon": "view"
+    },
+    {
+      "id": "2",
+      "name": "Private Balcony",
+      "icon": "balcony"
+    },
+    {
+      "id": "3",
+      "name": "King Bed",
+      "icon": "bed"
+    },
+    {
+      "id": "4",
+      "name": "Queen Bed",
+      "icon": "bed"
+    },
+    {
+      "id": "5",
+      "name": "WiFi",
+      "icon": "wifi"
+    },
+    {
+      "id": "6",
+      "name": "Air Conditioning",
+      "icon": "ac"
+    },
+    {
+      "id": "7",
+      "name": "Mini Bar",
+      "icon": "bar"
+    },
+    {
+      "id": "8",
+      "name": "TV",
+      "icon": "tv"
+    }
+  ],
+  "roomTypeAmenities": [
+    {
+      "id": "1",
+      "roomTypeId": 1,
+      "amenityId": 1
+    },
+    {
+      "id": "2",
+      "roomTypeId": 1,
+      "amenityId": 2
+    },
+    {
+      "id": "3",
+      "roomTypeId": 1,
+      "amenityId": 3
+    },
+    {
+      "id": "4",
+      "roomTypeId": 1,
+      "amenityId": 5
+    },
+    {
+      "id": "5",
+      "roomTypeId": 1,
+      "amenityId": 7
+    },
+    {
+      "id": "6",
+      "roomTypeId": 2,
+      "amenityId": 4
+    },
+    {
+      "id": "7",
+      "roomTypeId": 2,
+      "amenityId": 5
+    },
+    {
+      "id": "8",
+      "roomTypeId": 2,
+      "amenityId": 8
+    },
+    {
+      "id": "9",
+      "roomTypeId": 3,
+      "amenityId": 3
+    },
+    {
+      "id": "10",
+      "roomTypeId": 3,
+      "amenityId": 5
+    },
+    {
+      "id": "11",
+      "roomTypeId": 3,
+      "amenityId": 6
+    }
+  ],
+  "rooms": [
+    {
+      "roomNumber": "129",
+      "roomTypeId": "2",
+      "status": "maintenance",
+      "floor": "1",
+      "notes": "",
+      "id": "vjsTkUQQDVA"
+    },
+    {
+      "roomNumber": "119",
+      "roomTypeId": "2",
+      "status": "cleaning",
+      "floor": "1",
+      "notes": "",
+      "id": "WOaPlpFyvbE"
+    },
+    {
+      "roomNumber": "112",
+      "roomTypeId": "3",
+      "status": "reserved",
+      "floor": "1",
+      "notes": "",
+      "id": "lnQf5H4LyJY"
+    },
+    {
+      "roomNumber": "122",
+      "roomTypeId": "1",
+      "status": "reserved",
+      "floor": "1",
+      "notes": "",
+      "id": "a8ZomMCZX-A"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
