@@ -196,6 +196,14 @@
       "floor": "1",
       "notes": "",
       "id": "a8ZomMCZX-A"
+    },
+    {
+      "roomNumber": "121",
+      "roomTypeId": "1",
+      "status": "reserved",
+      "floor": "1",
+      "notes": "",
+      "id": "SM2N6p_iHi8"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

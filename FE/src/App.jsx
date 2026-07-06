@@ -31,7 +31,6 @@ function App() {
 
       <Route element={<DashboardLayout />}>
         {/* <Route index element={<Home />} /> */}
-        <Route index element={<Navigate to="home" replace />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="rooms" element={<Rooms />} />
         <Route path="roomType" element={<RoomType />} />
