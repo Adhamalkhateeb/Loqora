@@ -15,7 +15,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Loqora.API/Dockerfile
+      dockerfile: src/Loqora.API/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=LoqoraHotelDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true

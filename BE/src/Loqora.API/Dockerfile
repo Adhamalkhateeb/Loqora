@@ -12,14 +12,14 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Loqora.API/Loqora.API.csproj", "Loqora.API/"]
-COPY ["Loqora.Infrastructure/Loqora.Infrastructure.csproj", "Loqora.Infrastructure/"]
-COPY ["Loqora.Application/Loqora.Application.csproj", "Loqora.Application/"]
-COPY ["Loqora.Domain/Loqora.Domain.csproj", "Loqora.Domain/"]
-COPY ["Loqora.Contracts/Loqora.Contracts.csproj", "Loqora.Contracts/"]
-RUN dotnet restore "./Loqora.API/Loqora.API.csproj"
+COPY ["src/Loqora.API/Loqora.API.csproj", "src/Loqora.API/"]
+COPY ["src/Loqora.Infrastructure/Loqora.Infrastructure.csproj", "src/Loqora.Infrastructure/"]
+COPY ["src/Loqora.Application/Loqora.Application.csproj", "src/Loqora.Application/"]
+COPY ["src/Loqora.Domain/Loqora.Domain.csproj", "src/Loqora.Domain/"]
+COPY ["src/Loqora.Contracts/Loqora.Contracts.csproj", "src/Loqora.Contracts/"]
+RUN dotnet restore "./src/Loqora.API/Loqora.API.csproj"
 COPY . .
-WORKDIR "/src/Loqora.API"
+WORKDIR "/src/src/Loqora.API"
 RUN dotnet build "./Loqora.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
