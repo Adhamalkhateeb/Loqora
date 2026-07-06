@@ -1,0 +1,20 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# .NET Core
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+.vs/
+*.userprefs
+*.db
+*.db-shm
+*.db-wal
+
+# Docker
+docker-compose.override.yml
+.dockerignore

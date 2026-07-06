@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Loqora.API/Loqora.API.csproj" />
+  <Project Path="Loqora.Application/Loqora.Application.csproj" Id="0a42c367-4d71-46b5-ab7f-e5a6835d6204" />
+  <Project Path="Loqora.Contracts/Loqora.Contracts.csproj" />
+  <Project Path="Loqora.Domain/Loqora.Domain.csproj" Id="2fa94af8-20b7-4239-8c88-19639f118d76" />
+  <Project Path="Loqora.Infrastructure/Loqora.Infrastructure.csproj" />
+</Solution>

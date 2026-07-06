@@ -1,0 +1,6 @@
+@Loqora.Web_HostAddress = https://localhost:7007
+
+GET {{Loqora.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
