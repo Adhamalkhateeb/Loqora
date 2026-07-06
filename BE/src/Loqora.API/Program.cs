@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Loqora.Application;
 using Loqora.Infrastructure;
 using Loqora.Infrastructure.Data;
@@ -51,13 +50,5 @@ app.MapPrometheusScrapingEndpoint();
 
 app.MapStaticAssets();
 
-
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    await db.Database.MigrateAsync();
-}
 
 app.Run();
