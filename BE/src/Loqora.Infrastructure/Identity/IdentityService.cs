@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Application.Features.Identity.Dtos;
 using Loqora.Domain.Common.Results;
@@ -11,11 +12,13 @@ namespace Loqora.Infrastructure.Identity
     public class IdentityService(
         UserManager<AppUser> userManager,
         SignInManager<AppUser> signInManager,
-        ITokenProvider tokenProvider) : IIdentityService
+        ITokenProvider tokenProvider,
+        IAppDbContext context) : IIdentityService
     {
         private readonly UserManager<AppUser> _userManager = userManager;
         private readonly SignInManager<AppUser> _signInManager = signInManager;
         private readonly ITokenProvider _tokenProvider = tokenProvider;
+        private readonly IAppDbContext _context = context;
 
 
         public async Task<Result<AuthResponse>> LoginAsync(string email, string password, CancellationToken ct = default)
@@ -43,6 +46,20 @@ namespace Loqora.Infrastructure.Identity
 
         }
 
+        public async Task<Result<Success>> LogoutAsync(Guid userId, CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user is null)
+                return IdentityErrors.UserNotFound;
+
+            await _context.RefreshTokens
+                .Where(rt => rt.UserId == userId)
+                .ExecuteDeleteAsync(ct);
+
+            return Result.Success;
+        }
+
         public async Task<Result<AppUserDto>> CreateUserAsync(
             string firstName,
             string lastName,
@@ -52,8 +69,6 @@ namespace Loqora.Infrastructure.Identity
             CancellationToken ct = default
         )
         {
-
-
             var user = AppUser.Create(firstName, lastName, email);
 
             var createResult = await _userManager.CreateAsync(user, password);
@@ -69,7 +84,6 @@ namespace Loqora.Infrastructure.Identity
 
                 return MapIdentityErrors(roleResult);
             }
-
 
             return new AppUserDto(
                 user.Id,
@@ -99,8 +113,6 @@ namespace Loqora.Infrastructure.Identity
 
             return Result.Success;
         }
-
-
 
         public async Task<Result<string>> GenerateEmailConfirmationTokenAsync(Guid userId)
         {
@@ -167,7 +179,6 @@ namespace Loqora.Infrastructure.Identity
             return Result.Success;
         }
 
-
         public async Task<Result<AppUserDto>> GetUserAsync(Guid userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -184,9 +195,23 @@ namespace Loqora.Infrastructure.Identity
                     await _userManager.GetClaimsAsync(user));
         }
 
+        public async Task<Result<AppUserDto>> GetUserByEmailAsync(
+            string email,
+            CancellationToken ct = default
+        )
+        {
+            var user = await _userManager.FindByEmailAsync(email);
 
+            if (user is null)
+            {
+                return Error.NotFound("User:Not:Found", "User not found");
+            }
 
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
 
+            return new AppUserDto(user.Id, user.FirstName, user.LastName, user.Email!, roles, claims);
+        }
 
         private async Task<Result<AuthResponse>> GenerateAuthResponseAsync(AppUser user, CancellationToken ct)
         {
@@ -214,7 +239,6 @@ namespace Loqora.Infrastructure.Identity
                 );
         }
 
-
         private static List<Error> MapIdentityErrors(IdentityResult result)
         {
             return result.Errors
@@ -238,223 +262,6 @@ namespace Loqora.Infrastructure.Identity
                 .Distinct()
                 .ToList();
         }
-
-
-
-
-
-
-
-
-
-        //public async Task<Result<AuthResponse>> RefreshTokenAsync(
-        //    string token,
-        //    string refreshToken,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    // Implementation placeholder, usually interacts with ITokenProvider and IAppDbContext
-        //    return Error.Unexpected("Identity.RefreshToken", "Not fully implemented.");
-        //}
-
-        //public async Task<Result<Updated>> RevokeTokenAsync(
-        //    string refreshToken,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    // Implementation placeholder
-        //    return Result.Updated;
-        //}
-
-        //public async Task<Result<Updated>> ConfirmEmailAsync(
-        //    string email,
-        //    string token,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var user = await _userManager.FindByEmailAsync(email);
-
-        //    if (user is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    var result = await _userManager.ConfirmEmailAsync(user, token);
-
-        //    if (!result.Succeeded)
-        //    {
-        //        return Error.Unexpected(
-        //            "User:Email:Confirmation:Failed",
-        //            $"Failed to confirm email for user '{UtilityService.MaskEmail(email)}': {string.Join(", ", result.Errors.Select(e => e.Description))}"
-        //        );
-        //    }
-
-        //    return Result.Updated;
-        //}
-
-
-
-
-
-        //public async Task<Result<Updated>> ChangePasswordAsync(
-        //    string userId,
-        //    string currentPassword,
-        //    string newPassword,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var user = await _userManager.FindByIdAsync(userId);
-
-        //    if (user is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
-
-        //    if (!result.Succeeded)
-        //    {
-        //        return Error.Unexpected(
-        //            "Password:Change:Failed",
-        //            $"Failed to change password for user '{UtilityService.MaskEmail(user.Email!)}': {string.Join(", ", result.Errors.Select(e => e.Description))}"
-        //        );
-        //    }
-
-        //    return Result.Updated;
-        //}
-
-
-        //public async Task<Result<IEnumerable<AppUserDto>>> GetUsersAsync(
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var users = await _userManager
-        //        .Users.Select(x => new AppUserDto(
-        //            x.Id,
-        //            x.Email!,
-        //            new List<string>(),
-        //            new List<Claim>()
-        //        ))
-        //        .ToListAsync(ct);
-
-        //    return users;
-        //}
-
-        //public async Task<Result<AppUserDto>> GetUserByIdAsync(
-        //    string userId,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var user = await _userManager.FindByIdAsync(userId);
-
-        //    if (user is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    var roles = await _userManager.GetRolesAsync(user);
-        //    var claims = await _userManager.GetClaimsAsync(user);
-
-        //    return new AppUserDto(user.Id, user.Email!, roles, claims);
-        //}
-
-        public async Task<Result<AppUserDto>> GetUserByEmailAsync(
-            string email,
-            CancellationToken ct = default
-        )
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-
-            if (user is null)
-            {
-                return Error.NotFound("User:Not:Found", "User not found");
-            }
-
-            var roles = await _userManager.GetRolesAsync(user);
-            var claims = await _userManager.GetClaimsAsync(user);
-
-            return new AppUserDto(user.Id, user.FirstName, user.LastName, user.Email!, roles, claims);
-        }
-
-        //public async Task<Result<Updated>> UpdateAsync(
-        //    AppUserDto user,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var existingUser = await _userManager.FindByIdAsync(user.UserId);
-
-        //    if (existingUser is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    existingUser.Email = user.Email;
-        //    existingUser.UserName = user.Email;
-
-        //    var result = await _userManager.UpdateAsync(existingUser);
-
-        //    if (!result.Succeeded)
-        //    {
-        //        return Error.Unexpected(
-        //            "User:Update:Failed",
-        //            $"Failed to update user '{UtilityService.MaskEmail(existingUser.Email!)}': {string.Join(", ", result.Errors.Select(e => e.Description))}"
-        //        );
-        //    }
-
-        //    return Result.Updated;
-        //}
-
-        //public async Task<Result<Deleted>> DeleteUserAsync(
-        //    string userId,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var user = await _userManager.FindByIdAsync(userId);
-
-        //    if (user is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    var result = await _userManager.DeleteAsync(user);
-
-        //    if (!result.Succeeded)
-        //    {
-        //        return Error.Unexpected(
-        //            "User:Deletion:Failed",
-        //            $"Failed to delete user '{UtilityService.MaskEmail(user.Email!)}': {string.Join(", ", result.Errors.Select(e => e.Description))}"
-        //        );
-        //    }
-
-        //    return Result.Deleted;
-        //}
-
-        //public async Task<Result<Updated>> AssignRoleAsync(
-        //    string userId,
-        //    string role,
-        //    CancellationToken ct = default
-        //)
-        //{
-        //    var user = await _userManager.FindByIdAsync(userId);
-
-        //    if (user is null)
-        //    {
-        //        return Error.NotFound("User:Not:Found", "User not found");
-        //    }
-
-        //    var result = await _userManager.AddToRoleAsync(user, role);
-
-        //    if (!result.Succeeded)
-        //    {
-        //        return Error.Unexpected(
-        //            "User:Role:Assignment:Failed",
-        //            $"Failed to assign role '{role}' to user '{UtilityService.MaskEmail(user.Email!)}': {string.Join(", ", result.Errors.Select(e => e.Description))}"
-        //        );
-        //    }
-
-        //    return Result.Updated;
-        //}
-
 
     }
 }

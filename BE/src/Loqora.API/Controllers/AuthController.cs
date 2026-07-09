@@ -59,10 +59,12 @@ public sealed class AuthController(ISender sender) : ApiController
     }
 
     [HttpPost("logout")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [EndpointName("Logout")]
-    [EndpointSummary("Logs out the current user.")]
-    [EndpointDescription("This endpoint logs out the user.")]
+    [EndpointSummary("Logs out the current user and revokes their refresh token.")]
+    [EndpointDescription("This endpoint logs out the authenticated user by revoking all their active refresh tokens. Requires a valid JWT access token.")]
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {

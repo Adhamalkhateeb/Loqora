@@ -13,8 +13,6 @@ public interface IIdentityService
         IList<string> roles,
         CancellationToken cancellationToken = default);
 
-
-
     Task<Result<string>> GenerateEmailConfirmationTokenAsync(
         Guid userId);
 
@@ -26,49 +24,28 @@ public interface IIdentityService
         Guid userId);
 
     Task<Result<AuthResponse>> LoginAsync(
-    string email,
-    string password,
-    CancellationToken ct = default);
+        string email,
+        string password,
+        CancellationToken ct = default);
+
+    Task<Result<Success>> LogoutAsync(
+        Guid userId,
+        CancellationToken ct = default);
 
     Task<Result<AppUserDto>> GetUserAsync(
         Guid userId);
 
-    //Task<Result<AuthResponse>> RefreshTokenAsync(
-    //    string token,
-    //    string refreshToken,
-    //    CancellationToken ct = default
-    //);
-
-    //Task<Result<Updated>> RevokeTokenAsync(
-    //    string refreshToken,
-    //    CancellationToken ct = default
-    //);
-
-
     Task<Result<(Guid UserId, string UserFullName, string Token)>> GeneratePasswordResetTokenAsync(
         string email,
-        CancellationToken ct = default
-    );
+        CancellationToken ct = default);
 
     Task<Result<Success>> ResetPasswordAsync(
         string email,
         string token,
         string newPassword,
-        CancellationToken ct = default
-    );
+        CancellationToken ct = default);
 
-    //Task<Result<Updated>> ChangePasswordAsync(
-    //    string userId,
-    //    string currentPassword,
-    //    string newPassword,
-    //    CancellationToken ct = default
-    //);
-
-    //// Management / Roles
-    //Task<Result<IEnumerable<AppUserDto>>> GetUsersAsync(CancellationToken ct = default);
-    //Task<Result<AppUserDto>> GetUserByIdAsync(string id, CancellationToken ct = default);
-    Task<Result<AppUserDto>> GetUserByEmailAsync(string email, CancellationToken ct = default);
-    //Task<Result<Updated>> UpdateAsync(AppUserDto user, CancellationToken ct = default);
-    //Task<Result<Deleted>> DeleteUserAsync(string id, CancellationToken ct = default);
-    //Task<Result<Updated>> AssignRoleAsync(string userId, string role, CancellationToken ct = default);
+    Task<Result<AppUserDto>> GetUserByEmailAsync(
+        string email,
+        CancellationToken ct = default);
 }
