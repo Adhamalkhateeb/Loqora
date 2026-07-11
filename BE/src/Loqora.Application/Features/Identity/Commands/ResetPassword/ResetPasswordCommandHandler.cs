@@ -1,7 +1,7 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Domain.Common.Results;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.ResetPassword;
 
@@ -21,6 +21,8 @@ public sealed class ResetPasswordCommandHandler(
             _logger.LogWarning("Failed to reset password for {Email} {@Errors}.", UtilityService.MaskEmail(request.Email), result.Errors);
             return result.Errors;
         }
+
+
 
         return Result.Success;
     }

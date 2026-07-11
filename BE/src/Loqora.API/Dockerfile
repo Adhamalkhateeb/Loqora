@@ -12,11 +12,14 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["Directory.Packages.props", "."]
+COPY ["Directory.Build.props", "."]
 COPY ["src/Loqora.API/Loqora.API.csproj", "src/Loqora.API/"]
 COPY ["src/Loqora.Infrastructure/Loqora.Infrastructure.csproj", "src/Loqora.Infrastructure/"]
 COPY ["src/Loqora.Application/Loqora.Application.csproj", "src/Loqora.Application/"]
 COPY ["src/Loqora.Domain/Loqora.Domain.csproj", "src/Loqora.Domain/"]
 COPY ["src/Loqora.Contracts/Loqora.Contracts.csproj", "src/Loqora.Contracts/"]
+
 RUN dotnet restore "./src/Loqora.API/Loqora.API.csproj"
 COPY . .
 WORKDIR "/src/src/Loqora.API"

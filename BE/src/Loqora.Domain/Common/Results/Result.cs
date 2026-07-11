@@ -54,8 +54,7 @@ public sealed class Result<TValue> : IResult<TValue>
         {
             throw new ArgumentException(
                 "Cannot create an Error Or <TValue> from an empty collection of errors. Provide at least one error.",
-                nameof(errors)
-            );
+                nameof(errors));
         }
 
         _errors = errors;
@@ -84,7 +83,6 @@ public sealed class Result<TValue> : IResult<TValue>
     public static implicit operator Result<TValue>(TValue value) => new(value);
     public static implicit operator Result<TValue>(Error error) => new(error);
     public static implicit operator Result<TValue>(List<Error> errors) => new(errors);
-
 }
 
 public readonly record struct Success;

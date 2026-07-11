@@ -1,32 +1,34 @@
 services:
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${DB_PASSWORD}"
-    ports:
-      - "1433:1433"
-    volumes:
-      - sql_data:/var/opt/mssql
-    restart: always
-
+  
   api:
     build:
       context: .
       dockerfile: src/Loqora.API/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=db;Database=LoqoraHotelDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:5341/ingest/otlp/v1/traces
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - JwtSettings__Secret=${JWT_SECRET}
-      - Email__SmtpPassword=${SMTP_PASSWORD}
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=LoqoraHotelDb;User=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://seq:5341/ingest/otlp/v1/traces
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      JwtSettings__Secret: ${JWT_SECRET}
+      Email__SmtpPassword: ${SMTP_PASSWORD}
     ports:
       - "5050:8080"
     depends_on:
-      - db
+      - sqlserver
       - seq
-    restart: on-failure
+    restart: on-failure  
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    restart: always
+
 
   seq:
     image: datalust/seq:latest
@@ -63,5 +65,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  sql_data:
+  sqlserver-data:
   grafana-data:

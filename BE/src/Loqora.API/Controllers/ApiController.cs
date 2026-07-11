@@ -1,8 +1,9 @@
 using Loqora.Domain.Common.Results;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Loqora.Web.Controllers;
+namespace Loqora.Api.Controllers;
 
 [ApiController]
 public class ApiController : ControllerBase

@@ -13,8 +13,7 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
     private readonly TimeProvider _dateTime = dateTime;
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
-        InterceptionResult<int> result
-    )
+        InterceptionResult<int> result)
     {
         UpdateEntities(eventData.Context);
 
@@ -24,13 +23,13 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
-        CancellationToken cancellationToken = default
-    )
+        CancellationToken cancellationToken = default)
     {
         UpdateEntities(eventData.Context);
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
+
     public void UpdateEntities(DbContext? context)
     {
         if (context is null)
@@ -82,5 +81,4 @@ public static class Extensions
             r.TargetEntry.State == EntityState.Added ||
             r.TargetEntry.State == EntityState.Modified
         ));
-
 }

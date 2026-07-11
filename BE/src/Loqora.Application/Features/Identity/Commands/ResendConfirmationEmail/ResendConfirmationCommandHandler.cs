@@ -1,8 +1,8 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Application.Features.Identity.Events;
 using Loqora.Domain.Common.Results;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.ResendConfirmation;
 
@@ -22,8 +22,9 @@ public sealed class ResendConfirmationCommandHandler(
         if (userResult.IsError)
         {
             _logger.LogWarning(
-                "Resend confirmation requested for non-existent email {Email}.",
-                UtilityService.MaskEmail(request.Email));
+                "Resend confirmation requested for non-existent email {Email}. Error: {ErrorMessage}",
+                UtilityService.MaskEmail(request.Email),
+                userResult.TopError.Description);
 
             // Return success to prevent email enumeration
             return Result.Success;

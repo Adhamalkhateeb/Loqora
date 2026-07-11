@@ -39,6 +39,5 @@ public sealed class PasswordResetEmailHandler(
             "Password reset email sent to user {UserId} ({Email}).",
             notification.UserId,
             UtilityService.MaskEmail(notification.Email));
-
     }
 }

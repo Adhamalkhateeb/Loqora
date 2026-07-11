@@ -23,8 +23,7 @@ public sealed class RegisterRequest
     [StringLength(
         30,
         MinimumLength = 6,
-        ErrorMessage = "Password must be between 6 and 30 characters."
-    )]
+        ErrorMessage = "Password must be between 6 and 30 characters.")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = null!;
 

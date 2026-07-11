@@ -6,21 +6,17 @@ public static class RefreshTokenErrors
 {
     public static readonly Error IdRequired = Error.Validation(
         "RefreshToken:Id:Required",
-        "Refresh token ID is required."
-    );
+        "Refresh token ID is required.");
 
     public static readonly Error TokenRequired = Error.Validation(
         "RefreshToken:Token:Required",
-        "Token value is required."
-    );
+        "Token value is required.");
 
     public static readonly Error UserIdRequired = Error.Validation(
         "RefreshToken:UserId:Required",
-        "User ID is required."
-    );
+        "User ID is required.");
 
     public static readonly Error ExpiryInvalid = Error.Validation(
         "RefreshToken:Expiry:Invalid",
-        "Expiry must be in the future."
-    );
+        "Expiry must be in the future.");
 }

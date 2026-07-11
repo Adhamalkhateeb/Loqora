@@ -1,35 +1,58 @@
 using Asp.Versioning;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
+
 using Loqora.Application.Features.Identity.Commands.ConfirmEmail;
 using Loqora.Application.Features.Identity.Commands.ForgotPassword;
 using Loqora.Application.Features.Identity.Commands.Login;
 using Loqora.Application.Features.Identity.Commands.Logout;
+using Loqora.Application.Features.Identity.Commands.RefreshTokens;
 using Loqora.Application.Features.Identity.Commands.RegisterGuest;
 using Loqora.Application.Features.Identity.Commands.ResendConfirmation;
 using Loqora.Application.Features.Identity.Commands.ResetPassword;
-using Loqora.Application.Features.Identity.Dtos;
 using Loqora.Contracts.Request.Auth;
+using Loqora.Contracts.Responses.Auth;
+using Loqora.Infrastructure.Settings;
 
-namespace Loqora.Web.Controllers;
+using MediatR;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+
+namespace Loqora.Api.Controllers;
 
 [Route("api/v{version:apiversion}/auth")]
 [ApiVersion("1.0")]
-public sealed class AuthController(ISender sender) : ApiController
+public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSettings) : ApiController
 {
+    private const string RefreshTokenCookieName = "RefreshToken";
+
     [HttpPost("login")]
-    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<AuthSuccessResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     [EndpointName("Login")]
     [EndpointSummary("Authenticates a user and returns an access token.")]
-    [EndpointDescription("This endpoint allows a user to authenticate by providing their email and password. Upon successful authentication, it returns an AuthResponse containing the access token, refresh token, and token expiration.")]
+    [EndpointDescription("This endpoint allows a user to authenticate by providing their email and password. Upon successful authentication, it returns an AuthSuccessResponse containing the access token and token expiration. The refresh token is securely set in an HttpOnly cookie.")]
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var command = new LoginCommand(request.Email, request.Password);
         var result = await sender.Send(command, ct);
-        return result.Match(response => Ok(response), Problem);
+
+        return result.Match(
+            response =>
+        {
+            SetRefreshTokenCookie(response.Token.RefreshToken!);
+
+            var successResponse = new AuthSuccessResponse(
+                new AccessTokenResponse(response.Token.AccessToken!, response.Token.ExpiresOnUtc),
+                response.UserId,
+                response.FullName,
+                response.Email,
+                response.EmailConfirmed,
+                response.Roles);
+
+            return Ok(successResponse);
+        }, Problem);
     }
 
     [HttpPost("register")]
@@ -43,15 +66,13 @@ public sealed class AuthController(ISender sender) : ApiController
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var command = new RegisterGuestCommand(
             request.FirstName,
             request.LastName,
             request.Email,
-            request.Password
-        );
+            request.Password);
 
         var result = await sender.Send(command, ct);
 
@@ -68,9 +89,14 @@ public sealed class AuthController(ISender sender) : ApiController
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        var command = new LogoutCommand();
-        var result = await sender.Send(command, ct);
-        return result.Match(response => Ok(), Problem);
+        var result = await sender.Send(new LogoutCommand(), ct);
+
+        return result.Match(
+            response =>
+        {
+            DeleteRefreshTokenCookie();
+            return Ok();
+        }, Problem);
     }
 
     [HttpPost("forgot-password")]
@@ -81,8 +107,7 @@ public sealed class AuthController(ISender sender) : ApiController
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> ForgotPassword(
         [FromBody] ForgotPasswordRequest request,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var command = new ForgotPasswordCommand(request.Email);
         var result = await sender.Send(command, ct);
@@ -98,8 +123,7 @@ public sealed class AuthController(ISender sender) : ApiController
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> ResetPassword(
         [FromBody] ResetPasswordRequest request,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var command = new ResetPasswordCommand(request.Email, request.Token, request.NewPassword);
         var result = await sender.Send(command, ct);
@@ -117,8 +141,7 @@ public sealed class AuthController(ISender sender) : ApiController
     public async Task<IActionResult> ConfirmEmail(
         [FromQuery] Guid userId,
         [FromQuery] string token,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var command = new ConfirmEmailCommand(userId, token);
         var result = await sender.Send(command, ct);
@@ -134,11 +157,69 @@ public sealed class AuthController(ISender sender) : ApiController
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> ResendConfirmation(
         [FromBody] ResendConfirmationRequest request,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var command = new ResendConfirmationCommand(request.Email);
         var result = await sender.Send(command, ct);
         return result.Match(response => Ok(), Problem);
+    }
+
+    [HttpPost("refresh")]
+    [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [EndpointName("RefreshToken")]
+    [EndpointSummary("Refreshes an expired access token using a valid refresh token.")]
+    [EndpointDescription("This endpoint allows a user to get a new access token without logging in again by providing their expired access token and valid refresh token.")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    {
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized(new ProblemDetails { Title = "Refresh token is missing from cookies." });
+        }
+
+        var command = new RefreshTokenCommand(refreshToken, request.ExpiredAccessToken);
+        var result = await sender.Send(command, ct);
+
+        return result.Match(
+            response =>
+        {
+            SetRefreshTokenCookie(response.RefreshToken!);
+
+            var successResponse = new AccessTokenResponse(response.AccessToken!, response.ExpiresOnUtc);
+
+            return Ok(successResponse);
+        }, errors =>
+        {
+            DeleteRefreshTokenCookie();
+            return Problem(errors);
+        });
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(jwtSettings.Value.RefreshTokenExpirationInDays),
+            Path = "/api/auth"
+        };
+        Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
+    }
+
+    private void DeleteRefreshTokenCookie()
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/api/auth"
+        };
+        Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
     }
 }

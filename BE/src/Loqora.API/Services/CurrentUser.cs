@@ -1,16 +1,15 @@
-﻿using Loqora.Application.Common.Interfaces;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace Loqora.Web.Services
-{
-    public class CurrentUser : IUser
-    {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+using Loqora.Application.Common.Interfaces;
 
-        public CurrentUser(IHttpContextAccessor httpContextAccessor)
-        {
-            _httpContextAccessor = httpContextAccessor;
-        }
-        public string? Id => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+namespace Loqora.Api.Services
+{
+    public class CurrentUser(IHttpContextAccessor contextAccessor) : IUser
+    {
+        private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
+
+        public string? Id =>
+            _contextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
     }
 }

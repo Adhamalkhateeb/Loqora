@@ -1,7 +1,7 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Domain.Common.Results;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.ConfirmEmail;
 

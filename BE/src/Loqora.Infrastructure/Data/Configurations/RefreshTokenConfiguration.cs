@@ -21,5 +21,4 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 
         builder.Property(rt => rt.ExpiresOnUtc).IsRequired();
     }
-
 }

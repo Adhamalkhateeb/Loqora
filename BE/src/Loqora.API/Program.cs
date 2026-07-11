@@ -34,7 +34,6 @@ if (app.Environment.IsDevelopment())
 
 
     await app.InitialiseDatabaseAsync();
-
 }
 else
 {

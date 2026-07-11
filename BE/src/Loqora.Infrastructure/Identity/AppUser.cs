@@ -14,7 +14,6 @@ public class AppUser : IdentityUser<Guid>
 
     private AppUser()
     {
-
     }
 
     private AppUser(string firstName, string lastName, string email)
@@ -38,5 +37,4 @@ public class AppUser : IdentityUser<Guid>
             lastName.Trim(),
             email.Trim().ToLowerInvariant());
     }
-
 }

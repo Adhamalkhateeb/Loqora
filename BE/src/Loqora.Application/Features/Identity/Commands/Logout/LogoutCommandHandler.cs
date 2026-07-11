@@ -1,7 +1,8 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
+using Loqora.Application.Common.Errors;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Domain.Common.Results;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.Logout;
 
@@ -19,7 +20,7 @@ public sealed class LogoutCommandHandler(
         if (string.IsNullOrWhiteSpace(_currentUser.Id) || !Guid.TryParse(_currentUser.Id, out var userId))
         {
             _logger.LogWarning("Logout attempted without a valid authenticated user.");
-            return Error.Unauthorized("Identity:Unauthenticated", "User is not authenticated.");
+            return ApplicationErrors.UserNotAuthenticated;
         }
 
         var result = await _identityService.LogoutAsync(userId, ct);

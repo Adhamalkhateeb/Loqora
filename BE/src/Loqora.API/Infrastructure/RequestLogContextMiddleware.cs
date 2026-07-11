@@ -1,6 +1,6 @@
 ﻿using Serilog.Context;
 
-namespace Loqora.Web.Infrastructure;
+namespace Loqora.Api.Infrastructure;
 
 public class RequestLogContextMiddleware(RequestDelegate next)
 {
@@ -16,3 +16,13 @@ public class RequestLogContextMiddleware(RequestDelegate next)
         }
     }
 }
+
+public static class RequestLogContextMiddlewareExtensions
+{
+    public static IApplicationBuilder UseRequestLogContext(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<RequestLogContextMiddleware>();
+    }
+}
+
+

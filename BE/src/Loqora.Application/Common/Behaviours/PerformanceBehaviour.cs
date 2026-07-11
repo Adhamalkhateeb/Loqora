@@ -33,11 +33,9 @@ public class PerformanceBehaviour<TRequest, TResponse>
                requestName,
                elapsedMilliseconds,
                userId,
-               request
-           );
+               request);
         }
 
         return response;
-
     }
 }

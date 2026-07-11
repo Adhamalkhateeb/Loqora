@@ -32,7 +32,7 @@ public interface IIdentityService
         Guid userId,
         CancellationToken ct = default);
 
-    Task<Result<AppUserDto>> GetUserAsync(
+    Task<Result<AppUserDto>> GetUserByIdAsync(
         Guid userId);
 
     Task<Result<(Guid UserId, string UserFullName, string Token)>> GeneratePasswordResetTokenAsync(

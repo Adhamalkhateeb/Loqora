@@ -28,6 +28,5 @@ namespace Loqora.Application.Common.Behaviours
 
             return (dynamic)errors;
         }
-
     }
 }

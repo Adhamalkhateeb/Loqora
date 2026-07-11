@@ -23,8 +23,7 @@ public sealed class RefreshToken : AuditableEntity
         Guid id,
         string? token,
         Guid? userId,
-        DateTimeOffset expiresOnUtc
-    )
+        DateTimeOffset expiresOnUtc)
     {
         if (id == Guid.Empty)
         {

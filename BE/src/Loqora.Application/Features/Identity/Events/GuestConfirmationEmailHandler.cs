@@ -53,6 +53,5 @@ public sealed class GuestConfirmationEmailHandler(
             "Confirmation email sent to user {UserId} ({Email}).",
             notification.UserId,
             UtilityService.MaskEmail(notification.Email));
-
     }
 }

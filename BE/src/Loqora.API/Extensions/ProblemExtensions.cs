@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Loqora.Domain.Common.Results;
+﻿using Loqora.Domain.Common.Results;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace Loqora.Web.Extensions;
 
@@ -46,3 +47,4 @@ public static class ProblemExtensions
         return Results.Json(problemDetails, statusCode: StatusCodes.Status400BadRequest);
     }
 }
+

@@ -1,25 +1,29 @@
-using Asp.Versioning;
-using Microsoft.AspNetCore.RateLimiting;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Loqora.Application.Common.Interfaces;
-using Loqora.Infrastructure.Settings;
-using Loqora.Web.Infrastructure;
-using Loqora.Web.OpenApi.Transformers;
-using Loqora.Web.Services;
-using Serilog;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
-namespace Loqora.Web
+using Asp.Versioning;
+
+using Loqora.Api.Infrastructure;
+using Loqora.Api.Services;
+using Loqora.Application.Common.Interfaces;
+using Loqora.Infrastructure.Settings;
+using Loqora.Web.OpenApi.Transformers;
+
+using Microsoft.AspNetCore.RateLimiting;
+
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+using Serilog;
+
+namespace Loqora.Api
 {
     public static class DependencyInjection
     {
         public static IServiceCollection AddPresentation(
             this IServiceCollection services,
-            IConfiguration configuration
-        )
+            IConfiguration configuration)
         {
             services
                 .AddCustomProblemDetails()
@@ -32,7 +36,15 @@ namespace Loqora.Web
                 .AddIdentityInfrastructure()
                 .AddAppRateLimiting()
                 .AddAppOutputCaching()
-                .AddAppOpenTelemetry();
+                .AddAppOpenTelemetry()
+                .AddCompression();
+
+            return services;
+        }
+
+        private static IServiceCollection AddCompression(this IServiceCollection services)
+        {
+            services.AddResponseCompression(options => options.EnableForHttps = true);
 
             return services;
         }
@@ -46,10 +58,8 @@ namespace Loqora.Web
                         $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
                     context.ProblemDetails.Extensions.Add(
                         "requestId",
-                        context.HttpContext.TraceIdentifier
-                    );
-                }
-            );
+                        context.HttpContext.TraceIdentifier);
+                });
 
             return services;
         }
@@ -76,7 +86,7 @@ namespace Loqora.Web
 
         private static IServiceCollection AddApiDocumentation(this IServiceCollection services)
         {
-            string[] versions = { "v1" };
+            string[] versions = ["v1"];
 
             foreach (var version in versions)
             {
@@ -87,9 +97,9 @@ namespace Loqora.Web
                         options.AddDocumentTransformer<VersionInfoTransformer>();
                         options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
                         options.AddOperationTransformer<BearerSecurityOperationTransformer>();
-                    }
-                );
+                    });
             }
+
             return services;
         }
 
@@ -99,29 +109,26 @@ namespace Loqora.Web
             return services;
         }
 
-        public static IServiceCollection AddControllerWithJsonConfiguration(
-            this IServiceCollection services
-        )
+        private static IServiceCollection AddControllerWithJsonConfiguration(
+            this IServiceCollection services)
         {
             services
                 .AddControllers()
                 .AddJsonOptions(options =>
                     options.JsonSerializerOptions.DefaultIgnoreCondition =
-                        JsonIgnoreCondition.WhenWritingNull
-                );
+                        JsonIgnoreCondition.WhenWritingNull);
 
             return services;
         }
 
-        public static IServiceCollection AddValidation(this IServiceCollection services)
+        private static IServiceCollection AddValidation(this IServiceCollection services)
         {
             return services;
         }
 
-        public static IServiceCollection AddConfiguredCors(
+        private static IServiceCollection AddConfiguredCors(
             this IServiceCollection services,
-            IConfiguration configuration
-        )
+            IConfiguration configuration)
         {
             var appSettings = configuration.GetSection("AppSettings").Get<AppSettings>()!;
 
@@ -133,21 +140,19 @@ namespace Loqora.Web
                             .WithOrigins(appSettings.AllowedOrigins!)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
-                            .AllowCredentials()
-                )
-            );
+                            .AllowCredentials()));
 
             return services;
         }
 
-        public static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services)
+        private static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services)
         {
             services.AddScoped<IUser, CurrentUser>();
             services.AddHttpContextAccessor();
             return services;
         }
 
-        public static IServiceCollection AddAppRateLimiting(this IServiceCollection services)
+        private static IServiceCollection AddAppRateLimiting(this IServiceCollection services)
         {
             services.AddRateLimiter(options =>
             {
@@ -161,8 +166,7 @@ namespace Loqora.Web
                         limiterOptions.QueueLimit = 10;
                         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                         limiterOptions.AutoReplenishment = true;
-                    }
-                );
+                    });
 
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             });
@@ -170,7 +174,7 @@ namespace Loqora.Web
             return services;
         }
 
-        public static IServiceCollection AddAppOutputCaching(this IServiceCollection services)
+        private static IServiceCollection AddAppOutputCaching(this IServiceCollection services)
         {
             services.AddOutputCache(options =>
             {
@@ -181,43 +185,39 @@ namespace Loqora.Web
             return services;
         }
 
-        public static IServiceCollection AddAppOpenTelemetry(this IServiceCollection services)
+        private static IServiceCollection AddAppOpenTelemetry(this IServiceCollection services)
         {
             services.AddOpenTelemetry()
                 .ConfigureResource(res => res.AddService("hotelservice"))
-                .WithTracing(tracing =>
-                {
-                    tracing.AddAspNetCoreInstrumentation()
+                .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
-                        .AddOtlpExporter();
-                })
-                .WithMetrics(metrics =>
-                {
-                    metrics.AddHttpClientInstrumentation()
+                        .AddOtlpExporter())
+                .WithMetrics(metrics => metrics.AddHttpClientInstrumentation()
                         .AddAspNetCoreInstrumentation()
                         .AddOtlpExporter()
-                        .AddPrometheusExporter();
-                });
+                        .AddPrometheusExporter());
 
             return services;
         }
 
-        public static IApplicationBuilder UseCoreMiddlewares(
-            this IApplicationBuilder app,
-            IConfiguration configuration
-        )
+        extension(IApplicationBuilder app)
         {
-            app.UseExceptionHandler();
-            app.UseStatusCodePages();
-            app.UseHttpsRedirection();
-            app.UseSerilogRequestLogging();
-            app.UseCors(configuration["AppSettings:CorsPolicyName"]!);
-            app.UseRateLimiter();
-            app.UseAuthentication();
-            app.UseAuthorization();
-            app.UseOutputCache();
+            public IApplicationBuilder UseCoreMiddlewares(IConfiguration configuration)
+            {
+                app.UseExceptionHandler();
+                app.UseStatusCodePages();
+                app.UseResponseCompression();
+                app.UseHttpsRedirection();
+                app.UseRequestLogContext();
+                app.UseSerilogRequestLogging();
+                app.UseCors(configuration["AppSettings:CorsPolicyName"]!);
+                app.UseRateLimiter();
+                app.UseAuthentication();
+                app.UseAuthorization();
+                app.UseOutputCache();
 
-            return app;
+                return app;
+            }
         }
     }
 }

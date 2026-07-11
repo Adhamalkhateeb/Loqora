@@ -18,8 +18,7 @@ namespace Loqora.Application.Common.Behaviours
                 "Request: {Name} {@UserId} {@Request}",
                 requestName,
                 userId,
-                request
-            );
+                request);
         }
     }
 }
