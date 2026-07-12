@@ -18,12 +18,11 @@ public sealed class RegisterRequest
     [MaxLength(256, ErrorMessage = "Email is too long.")]
     public string Email { get; set; } = null!;
 
-
     [Required(ErrorMessage = "Password is required.")]
     [StringLength(
         30,
-        MinimumLength = 6,
-        ErrorMessage = "Password must be between 6 and 30 characters.")]
+        MinimumLength = 8,
+        ErrorMessage = "Password must be between 8 and 30 characters.")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = null!;
 

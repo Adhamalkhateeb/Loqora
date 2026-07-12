@@ -6,5 +6,5 @@ public static class IdentityConstants
     public const int LastNameMaxLength = 50;
     public const int EmailMaxLength = 256;
     public const int PasswordMaxLength = 30;
-    public const int PasswordMinLength = 6;
+    public const int PasswordMinLength = 8;
 }

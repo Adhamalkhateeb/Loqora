@@ -1,8 +1,10 @@
+using Loqora.Api;
+using Loqora.Api.Extensions;
 using Loqora.Application;
 using Loqora.Infrastructure;
-using Loqora.Infrastructure.Data;
-using Loqora.Web;
+
 using Scalar.AspNetCore;
+
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,7 +34,6 @@ if (app.Environment.IsDevelopment())
 
     app.MapScalarApiReference();
 
-
     await app.InitialiseDatabaseAsync();
 }
 else
@@ -44,10 +45,6 @@ app.UseCoreMiddlewares(builder.Configuration);
 
 app.MapControllers();
 app.MapPrometheusScrapingEndpoint();
-
-//app.UseAntiforgery();
-
 app.MapStaticAssets();
-
 
 app.Run();

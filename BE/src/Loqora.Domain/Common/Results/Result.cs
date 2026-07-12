@@ -64,7 +64,9 @@ public sealed class Result<TValue> : IResult<TValue>
     private Result(TValue value)
     {
         if (value is null)
+        {
             throw new ArgumentNullException(nameof(value));
+        }
 
         _value = value;
         IsSuccess = true;

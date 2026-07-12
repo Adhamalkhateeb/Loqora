@@ -1,8 +1,10 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Application.Features.Identity.Dtos;
 using Loqora.Domain.Common.Results;
+
+using MediatR;
+
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.Login;
 
@@ -15,7 +17,8 @@ public sealed class LoginCommandHandler(
 
     public async Task<Result<AuthResponse>> Handle(LoginCommand request, CancellationToken ct)
     {
-        var result = await _identityService.LoginAsync(request.Email, request.Password, ct);
+        var email = request.Email.Trim();
+        var result = await _identityService.LoginAsync(email, request.Password, ct);
 
         if (result.IsError)
         {

@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Loqora.Application.Common.Interfaces;
+using Loqora.Domain.Common;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Loqora.Application.Common.Interfaces;
-using Loqora.Domain.Common;
 
 namespace Loqora.Infrastructure.Data.Interceptors;
 
@@ -33,7 +34,9 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
     public void UpdateEntities(DbContext? context)
     {
         if (context is null)
+        {
             return;
+        }
 
         foreach (var entry in context.ChangeTracker.Entries<AuditableEntity>())
         {
@@ -70,7 +73,6 @@ public class AuditableEntityInterceptor(IUser user, TimeProvider dateTime) : Sav
         }
     }
 }
-
 
 public static class Extensions
 {

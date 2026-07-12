@@ -1,10 +1,12 @@
+using System.Text;
+
 using Loqora.Application.Common.Interfaces;
 using Loqora.Application.Features.Identity.Dtos;
 using Loqora.Domain.Common.Results;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace Loqora.Infrastructure.Identity
 {
@@ -12,48 +14,72 @@ namespace Loqora.Infrastructure.Identity
         UserManager<AppUser> userManager,
         SignInManager<AppUser> signInManager,
         ITokenProvider tokenProvider,
-        IAppDbContext context) : IIdentityService
+        IAppDbContext context,
+        TimeProvider timeProvider) : IIdentityService
     {
         private readonly UserManager<AppUser> _userManager = userManager;
         private readonly SignInManager<AppUser> _signInManager = signInManager;
         private readonly ITokenProvider _tokenProvider = tokenProvider;
         private readonly IAppDbContext _context = context;
+        private readonly TimeProvider _timeProvider = timeProvider;
 
-
-        #region Authentication
         public async Task<Result<AuthResponse>> LoginAsync(string email, string password, CancellationToken ct = default)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
             if (user is null)
+            {
                 return Error.Unauthorized("Identity:InvalidCredentials", "The provided email or password is incorrect.");
+            }
 
             var passwordResult = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
 
-            if (!passwordResult.Succeeded)
-                return Error.Unauthorized("Identity:InvalidCredentials", "The provided email or password is incorrect.");
-
-
-            if (await _userManager.IsLockedOutAsync(user))
+            if (passwordResult.IsLockedOut)
+            {
                 return Error.Unauthorized("Identity:UserLockedOut", "The user account is locked out due to multiple failed login attempts.");
+            }
+
+            if (!passwordResult.Succeeded)
+            {
+                return Error.Unauthorized("Identity:InvalidCredentials", "The provided email or password is incorrect.");
+            }
+
 
             if (!user.EmailConfirmed)
+            {
                 return Error.Forbidden("Identity:EmailNotConfirmed", "The email address has not been confirmed.");
+            }
 
 
-            return await GenerateAuthResponseAsync(user, ct);
+            return await CreateAuthResponseAsync(user, ct);
         }
 
-        public async Task<Result<Success>> LogoutAsync(Guid userId, CancellationToken ct = default)
+        public async Task<Result<Success>> LogoutAsync(Guid userId, string refreshToken, CancellationToken ct = default)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
-            await _context.RefreshTokens
-                .Where(rt => rt.UserId == userId)
-                .ExecuteDeleteAsync(ct);
+            var hashedToken = _tokenProvider.HashToken(refreshToken);
+            var tokenEntity = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.UserId == userId && rt.Token == hashedToken, ct);
+
+            if (tokenEntity is null)
+            {
+                return Error.NotFound("Identity:RefreshToken:NotFound", "The refresh token was not found.");
+            }
+
+
+            var revokeResult = tokenEntity.Revoke(_timeProvider.GetUtcNow());
+            if (revokeResult.IsError)
+            {
+                return revokeResult.Errors;
+            }
+
+            await _context.SaveChangesAsync(ct);
 
             return Result.Success;
         }
@@ -71,7 +97,9 @@ namespace Loqora.Infrastructure.Identity
             var createResult = await _userManager.CreateAsync(user, password);
 
             if (!createResult.Succeeded)
+            {
                 return MapIdentityErrors(createResult);
+            }
 
             var roleResult = await _userManager.AddToRolesAsync(user, roles);
 
@@ -91,26 +119,28 @@ namespace Loqora.Infrastructure.Identity
                 await _userManager.GetClaimsAsync(user));
         }
 
-        #endregion
-
-        #region Email Confirmation
-
         public async Task<Result<Success>> ConfirmEmailAsync(Guid userId, string token)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             if (user.EmailConfirmed)
+            {
                 return Error.Conflict("Identity:EmailAlreadyConfirmed", "The email address has already been confirmed.");
+            }
 
             var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
 
             var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
 
             if (!result.Succeeded)
+            {
                 return Error.Validation("Identity:InvalidConfirmationToken", "The provided confirmation token is invalid or has expired.");
+            }
 
             return Result.Success;
         }
@@ -120,10 +150,14 @@ namespace Loqora.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             if (user.EmailConfirmed)
+            {
                 return Error.Conflict("Identity:EmailAlreadyConfirmed", "The email address has already been confirmed.");
+            }
 
             return await _userManager.GenerateEmailConfirmationTokenAsync(user);
         }
@@ -133,14 +167,13 @@ namespace Loqora.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             return user.EmailConfirmed;
         }
 
-        #endregion
-
-        #region Password Reset
         public async Task<Result<(Guid UserId, string UserFullName, string Token)>> GeneratePasswordResetTokenAsync(
             string email,
             CancellationToken ct = default)
@@ -148,13 +181,19 @@ namespace Loqora.Infrastructure.Identity
             var user = await _userManager.FindByEmailAsync(email);
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             if (user.EmailConfirmed == false)
+            {
                 return Error.Forbidden("Identity:EmailNotConfirmed", "The email address has not been confirmed.");
+            }
 
             if (await _userManager.IsLockedOutAsync(user))
+            {
                 return Error.Unauthorized("Identity:UserLockedOut", "The user account is locked out due to multiple failed login attempts.");
+            }
 
             return (user.Id, $"{user.FirstName} {user.LastName}", await _userManager.GeneratePasswordResetTokenAsync(user));
         }
@@ -168,31 +207,36 @@ namespace Loqora.Infrastructure.Identity
             var user = await _userManager.FindByEmailAsync(email);
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
 
             var result = await _userManager.ResetPasswordAsync(user, decodedToken, newPassword);
 
             if (!result.Succeeded)
+            {
                 return Error.Unexpected("Identity:PasswordResetFailed", "Password reset failed due to an unexpected error.");
+            }
 
+            var now = _timeProvider.GetUtcNow();
 
-            await _context.RefreshTokens.Where(rt => rt.UserId == user.Id).ExecuteDeleteAsync(ct);
+            await _context.RefreshTokens
+                .Where(rt => rt.UserId == user.Id && rt.RevokedOnUtc == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.RevokedOnUtc, now), ct);
 
             return Result.Success;
         }
-
-        #endregion
-
-        #region User
 
         public async Task<Result<AppUserDto>> GetUserByIdAsync(Guid userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
+            {
                 return Error.NotFound("Identity:User:NotFound", "The user was not found.");
+            }
 
             return new AppUserDto(
                     user.Id,
@@ -220,23 +264,26 @@ namespace Loqora.Infrastructure.Identity
             return new AppUserDto(user.Id, user.FirstName, user.LastName, user.Email!, roles, claims);
         }
 
-        #endregion
-
-        #region helpers
-        private async Task<Result<AuthResponse>> GenerateAuthResponseAsync(AppUser user, CancellationToken ct)
+        private async Task<Result<AuthResponse>> CreateAuthResponseAsync(AppUser user, CancellationToken ct)
         {
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+
             var userDto = new AppUserDto(
                 user.Id,
                 user.FirstName,
                 user.LastName,
                 user.Email!,
-                await _userManager.GetRolesAsync(user),
-                await _userManager.GetClaimsAsync(user));
+                roles,
+                claims);
 
             var tokenResult = await _tokenProvider.GenerateJwtTokenAsync(userDto, null, ct);
 
             if (tokenResult.IsError)
+            {
                 return tokenResult.Errors;
+            }
 
             return new AuthResponse(
                 Token: tokenResult.Value,
@@ -244,7 +291,7 @@ namespace Loqora.Infrastructure.Identity
                 FullName: $"{user.FirstName} {user.LastName}",
                 Email: user.Email!,
                 EmailConfirmed: user.EmailConfirmed,
-                Roles: await _userManager.GetRolesAsync(user));
+                Roles: roles);
         }
 
         private static List<Error> MapIdentityErrors(IdentityResult result)
@@ -263,12 +310,9 @@ namespace Loqora.Infrastructure.Identity
                     nameof(IdentityErrorDescriber.PasswordRequiresNonAlphanumeric)
                     => Error.Validation("Identity:InvalidPassword", "The provided password does not meet the complexity requirements."),
 
-                    _ =>  Error.Unexpected("Identity:RegistrationFailed", "User registration failed due to an unexpected error.")
+                    _ => Error.Unexpected("Identity:RegistrationFailed", "User registration failed due to an unexpected error.")
                 })
                 .Distinct()];
         }
-
-        #endregion
-
     }
 }

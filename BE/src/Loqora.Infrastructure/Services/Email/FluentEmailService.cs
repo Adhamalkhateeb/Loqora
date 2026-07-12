@@ -5,7 +5,7 @@ using Loqora.Infrastructure.Services.Email.Models;
 
 namespace Loqora.Infrastructure.Services.Email;
 
-public class FlunetEmailService(IFluentEmail fluentEmail) : IEmailService
+public class FluentEmailService(IFluentEmail fluentEmail) : IEmailService
 {
     private static readonly string TemplatesDir =
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Services", "Email", "Templates");

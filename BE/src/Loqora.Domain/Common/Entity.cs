@@ -1,10 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Loqora.Domain.Common;
 
-public abstract class Entity
+public abstract class Entity : ISoftDeletable
 {
     public Guid Id { get; }
+
+    public bool IsDeleted { get; private set; }
+
+    public DateTimeOffset? DeletedOnUtc { get; private set; }
+
+    public string? DeletedBy { get; private set; }
 
     private readonly List<DomainEvent> _domainEvents = [];
 
@@ -31,5 +37,30 @@ public abstract class Entity
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
+    }
+
+    public void Delete(string? deletedBy = null, DateTimeOffset? deletedOnUtc = null)
+    {
+        if (IsDeleted)
+        {
+            return;
+        }
+
+        IsDeleted = true;
+        DeletedBy = deletedBy;
+        DeletedOnUtc = deletedOnUtc ?? DateTimeOffset.UtcNow;
+
+    }
+
+    public void Restore()
+    {
+        if (!IsDeleted)
+        {
+            return;
+        }
+
+        IsDeleted = false;
+        DeletedBy = null;
+        DeletedOnUtc = null;
     }
 }

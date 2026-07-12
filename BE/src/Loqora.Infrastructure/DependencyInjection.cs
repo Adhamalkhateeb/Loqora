@@ -42,6 +42,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(connectionString);
 
         services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+        services.AddScoped<ISaveChangesInterceptor, SoftDeleteInterceptor>();
 
         services.AddDbContext<AppDbContext>(
         (sp, options) =>
@@ -63,22 +64,30 @@ public static class DependencyInjection
            .AddIdentityCore<AppUser>(options =>
            {
                options.Password.RequiredLength = Domain.Identity.IdentityConstants.PasswordMinLength;
-               options.Password.RequireDigit = true;
-               options.Password.RequireNonAlphanumeric = true;
-               options.Password.RequireUppercase = true;
-               options.Password.RequireLowercase = true;
                options.Password.RequiredUniqueChars = 4;
 
-               options.SignIn.RequireConfirmedAccount = true;
+               options.Password.RequireDigit = true;
+               options.Password.RequireLowercase = true;
+               options.Password.RequireUppercase = true;
+               options.Password.RequireNonAlphanumeric = true;
+
+               options.User.RequireUniqueEmail = true;
+               options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+
                options.SignIn.RequireConfirmedEmail = true;
+               options.SignIn.RequireConfirmedAccount = true;
 
                options.Lockout.MaxFailedAccessAttempts = 5;
-               options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+               options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
                options.Lockout.AllowedForNewUsers = true;
+
+               options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
+               options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultProvider;
+               options.Tokens.ChangeEmailTokenProvider = TokenOptions.DefaultEmailProvider;
            })
            .AddRoles<AppRole>()
-           .AddSignInManager()
            .AddEntityFrameworkStores<AppDbContext>()
+           .AddSignInManager()
            .AddDefaultTokenProviders();
 
         services.AddScoped<IIdentityService, IdentityService>();
@@ -89,9 +98,11 @@ public static class DependencyInjection
 
     private static IServiceCollection AddJwt(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.AddOptions<JwtSettings>().BindConfiguration(JwtSettings.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
-        var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
+        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
 
         services
             .AddAuthentication(options =>
@@ -99,23 +110,20 @@ public static class DependencyInjection
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
+            .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
             {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = jwtSettings.Issuer,
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings.Issuer,
 
-                    ValidateAudience = true,
-                    ValidAudience = jwtSettings.Audience,
+                ValidateAudience = true,
+                ValidAudience = jwtSettings.Audience,
 
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtSettings.Secret!)),
 
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
-                };
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
             });
 
         services.AddAuthorizationBuilder();
@@ -139,8 +147,9 @@ public static class DependencyInjection
 
     private static IServiceCollection AddFluentEmail(this IServiceCollection services, IConfiguration configuration)
     {
-
-        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions<EmailOptions>().BindConfiguration(EmailOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         var emailOptions = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()!;
 
@@ -148,13 +157,11 @@ public static class DependencyInjection
                 .AddRazorRenderer()
                 .AddSmtpSender(new SmtpClient(emailOptions.SmtpServer, emailOptions.SmtpPort)
                 {
-                    Host = emailOptions.SmtpServer,
-                    Port = emailOptions.SmtpPort,
                     Credentials = new NetworkCredential(emailOptions.SmtpUsername, emailOptions.SmtpPassword),
                     EnableSsl = true
                 });
 
-        services.AddScoped<IEmailService, FlunetEmailService>();
+        services.AddScoped<IEmailService, FluentEmailService>();
 
         return services;
     }

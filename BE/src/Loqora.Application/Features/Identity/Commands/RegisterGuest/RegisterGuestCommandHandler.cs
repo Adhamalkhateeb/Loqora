@@ -1,9 +1,11 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
 using Loqora.Application.Common.Interfaces;
 using Loqora.Application.Features.Identity.Events;
 using Loqora.Domain.Common.Results;
 using Loqora.Domain.Identity;
+
+using MediatR;
+
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Features.Identity.Commands.RegisterGuest;
 
@@ -19,9 +21,9 @@ public sealed class RegisterGuestCommandHandler(
     public async Task<Result<Created>> Handle(RegisterGuestCommand request, CancellationToken ct)
     {
         var createUserResult = await _identityService.CreateUserAsync(
-            request.FirstName,
-            request.LastName,
-            request.Email,
+            request.FirstName.Trim(),
+            request.LastName.Trim(),
+            request.Email.Trim(),
             request.Password,
             [Role.Guest.ToString()],
             ct);
@@ -41,7 +43,7 @@ public sealed class RegisterGuestCommandHandler(
         _logger.LogInformation(
             "Guest user {UserId} ({Email}) registered successfully.",
             user.Id,
-            UtilityService.MaskEmail(user.Email));
+            UtilityService.MaskEmail(user.Email.Trim()));
 
         await _publisher.Publish(
             new GuestConfirmationEmailEvent(

@@ -14,6 +14,7 @@ using Loqora.Infrastructure.Settings;
 
 using MediatR;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -26,6 +27,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     private const string RefreshTokenCookieName = "RefreshToken";
 
     [HttpPost("login")]
+    [AllowAnonymous]
     [ProducesResponseType<AuthSuccessResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
@@ -56,6 +58,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("register")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
@@ -80,7 +83,6 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("logout")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     [EndpointName("Logout")]
@@ -89,7 +91,8 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        var result = await sender.Send(new LogoutCommand(), ct);
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
+        var result = await sender.Send(new LogoutCommand(refreshToken), ct);
 
         return result.Match(
             response =>
@@ -100,6 +103,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("forgot-password")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [EndpointName("ForgotPassword")]
     [EndpointSummary("Initiates the password reset process.")]
@@ -115,6 +119,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("reset-password")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [EndpointName("ResetPassword")]
@@ -131,6 +136,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpGet("confirm-email")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,6 +155,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("resend-confirmation")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [EndpointName("ResendConfirmation")]
@@ -165,6 +172,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
     }
 
     [HttpPost("refresh")]
+    [AllowAnonymous]
     [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [EndpointName("RefreshToken")]
@@ -206,7 +214,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
             Secure = true,
             SameSite = SameSiteMode.None,
             Expires = DateTime.UtcNow.AddDays(jwtSettings.Value.RefreshTokenExpirationInDays),
-            Path = "/api/auth"
+            Path = "/api/v1/auth"
         };
         Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
     }
@@ -218,7 +226,7 @@ public sealed class AuthController(ISender sender, IOptions<JwtSettings> jwtSett
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.None,
-            Path = "/api/auth"
+            Path = "/api/v1/auth"
         };
         Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
     }

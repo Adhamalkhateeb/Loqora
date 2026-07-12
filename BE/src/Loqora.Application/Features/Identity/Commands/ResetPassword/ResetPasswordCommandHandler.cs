@@ -21,9 +21,7 @@ public sealed class ResetPasswordCommandHandler(
             _logger.LogWarning("Failed to reset password for {Email} {@Errors}.", UtilityService.MaskEmail(request.Email), result.Errors);
             return result.Errors;
         }
-
-
-
+        
         return Result.Success;
     }
 }

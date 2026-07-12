@@ -1,4 +1,4 @@
-﻿
+
 
 using Loqora.Domain.Common.Results;
 
@@ -19,5 +19,8 @@ public sealed class ApplicationErrors
 
     public static Error UserNotAuthenticated =>
         Error.Unauthorized("Auth:User:NotAuthenticated", "User is not authenticated.");
+
+    public static Error RefreshTokenMissing =>
+        Error.Validation("Auth:RefreshToken:Missing", "A refresh token is required to complete this action.");
 }
 

@@ -29,7 +29,7 @@ public sealed class RegisterGuestValidator : AbstractValidator<RegisterGuestComm
             .WithMessage($"Password must be at least {IdentityConstants.PasswordMinLength} characters.")
             .MaximumLength(IdentityConstants.PasswordMaxLength)
             .WithMessage($"Password must not exceed {IdentityConstants.PasswordMaxLength} characters.")
-            .Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{6,30}$")
+            .Matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#$^+=!*()@%&]).{8,30}$")
             .WithMessage("Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.");
     }
 }

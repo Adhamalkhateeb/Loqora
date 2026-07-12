@@ -1,7 +1,5 @@
 namespace Loqora.Contracts.Responses.Auth;
 
-public sealed record AccessTokenResponse(string AccessToken, DateTime ExpiresOnUtc);
-
 public sealed record AuthSuccessResponse(
     AccessTokenResponse Token,
     Guid UserId,
@@ -10,3 +8,4 @@ public sealed record AuthSuccessResponse(
     bool EmailConfirmed,
     IList<string> Roles
 );
+

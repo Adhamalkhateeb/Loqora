@@ -1,8 +1,11 @@
 ﻿
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Loqora.Application.Common.Interfaces;
 using System.Diagnostics;
+
+using Loqora.Application.Common.Interfaces;
+
+using MediatR;
+
+using Microsoft.Extensions.Logging;
 
 namespace Loqora.Application.Common.Behaviours;
 

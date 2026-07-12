@@ -11,7 +11,7 @@ public sealed class RefreshTokenCommandValidator : AbstractValidator<RefreshToke
             .NotEmpty()
             .WithErrorCode("RefreshToken:Required")
             .WithMessage("Refresh token is required.")
-            .MaximumLength(500)
+            .MaximumLength(512)
             .WithErrorCode("RefreshToken:TooLong")
             .WithMessage("Refresh token exceeds maximum length.");
 

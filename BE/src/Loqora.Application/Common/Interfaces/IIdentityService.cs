@@ -30,6 +30,7 @@ public interface IIdentityService
 
     Task<Result<Success>> LogoutAsync(
         Guid userId,
+        string refreshToken,
         CancellationToken ct = default);
 
     Task<Result<AppUserDto>> GetUserByIdAsync(
